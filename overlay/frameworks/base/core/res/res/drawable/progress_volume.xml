@@ -14,25 +14,28 @@
      limitations under the License.
 -->
 
-<resources>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Do not enable auto rotation switching -->
-    <bool name="def_accelerometer_rotation">false</bool>
+    <item android:id="@android:id/background">
+        <shape>
+            <solid android:color="#44ffffff" />
+        </shape>
+    </item>
 
-    <!-- Disable the lockscreen -->
-    <bool name="def_lockscreen_disabled">true</bool>
+    <item android:id="@android:id/secondaryProgress">
+        <clip>
+            <shape>
+                <solid android:color="#44ffffff" />
+            </shape>
+        </clip>
+    </item>
 
-    <!-- TODO FIX setup wizard -->
-    <bool name="def_device_provisioned">true</bool>
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape>
+                <solid android:color="#ff33b5e5" />
+            </shape>
+        </clip>
+    </item>
 
-    <!-- Keep screen on at all times by default -->
-    <bool name="def_stay_on_while_plugged_in">true</bool>
-
-    <!-- Do not give up on DHCP -->
-    <integer name="def_max_dhcp_retries">0</integer>
-
-    <bool name="def_wifi_on">true</bool>
-
-    <bool name="def_bluetooth_on">true</bool>
-
-</resources>
+</layer-list>

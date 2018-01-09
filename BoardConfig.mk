@@ -43,9 +43,14 @@ TARGET_NO_BOOTLOADER := true
 TARGET_NO_RADIOIMAGE := true
 
 # Kernel
+KERNEL_TOOLCHAIN := $(ANDROID_BUILD_TOP)/prebuilts/gcc/$(HOST_OS)-x86/aarch64/aarch64-linux-android-4.9/bin
 KERNEL_TOOLCHAIN_PREFIX := aarch64-linux-android-
 TARGET_KERNEL_SOURCE := kernel/nvidia/shield
 TARGET_KERNEL_CONFIG := lineageos_t210_defconfig
+BOARD_KERNEL_IMAGE_NAME := Image
+
+# Disable emulator for "make dist" until there is a 64-bit qemu kernel
+BUILD_EMULATOR := false
 
 TARGET_USERIMAGES_USE_EXT4 := true
 BOARD_USERDATAIMAGE_PARTITION_SIZE  := 10099646976
@@ -76,6 +81,13 @@ TARGET_RECOVERY_FSTAB := device/nvidia/foster/initfiles/fstab.foster
 
 # RenderScript
 OVERRIDE_RS_DRIVER := libnvRSDriver.so
+BOARD_OVERRIDE_RS_CPU_VARIANT_32 := cortex-a15
+BOARD_OVERRIDE_RS_CPU_VARIANT_64 := cortex-a57
+
+TARGET_USES_64_BIT_BCMDHD := true
+TARGET_USES_64_BIT_BINDER := true
+
+BOARD_WIDEVINE_OEMCRYPTO_LEVEL := 1
 
 # Wifi related defines
 BOARD_WPA_SUPPLICANT_DRIVER := NL80211
@@ -91,6 +103,17 @@ WIFI_DRIVER_FW_PATH_PARAM   := "/sys/module/bcmdhd/parameters/firmware_path"
 WIFI_DRIVER_MODULE_ARG      := "iface_name=wlan0"
 WIFI_DRIVER_MODULE_NAME     := "bcmdhd"
 
+# Enable dex-preoptimization to speed up first boot sequence
+ifeq ($(HOST_OS),linux)
+  ifeq ($(TARGET_BUILD_VARIANT),user)
+    ifeq ($(WITH_DEXPREOPT),)
+      WITH_DEXPREOPT := true
+    endif
+  endif
+endif
+
+ART_USE_HSPACE_COMPACT=true
+
 # SELinux
 BOARD_SEPOLICY_DIRS += device/nvidia/foster/sepolicy/
 
@@ -103,6 +126,10 @@ TARGET_LIBINIT_DEFINES_FILE := device/nvidia/foster/init/init_foster.cpp
 
 # Override common releasetools
 TARGET_RELEASETOOLS_EXTENSIONS := device/nvidia/foster/releasetools
+
+ifeq ($(SECURE_OS_BUILD),tlk)
+  BOARD_SUPPORT_ROLLBACK_PROTECTION := true
+endif
 
 # TWRP Support
 ifeq ($(WITH_TWRP),true)

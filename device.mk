@@ -18,23 +18,33 @@ PRODUCT_CHARACTERISTICS := tv
 TARGET_TEGRA_VERSION := t210
 TARGET_TEGRA_TOUCH := raydium
 
-$(call inherit-product, device/nvidia/shield-common/shield.mk)
-
-PRODUCT_AAPT_CONFIG += xlarge large
-PRODUCT_AAPT_PREF_CONFIG := xxhdpi
-TARGET_SCREEN_HEIGHT := 1920
-TARGET_SCREEN_WIDTH := 1080
-
-$(call inherit-product, frameworks/native/build/phone-xxhdpi-3072-dalvik-heap.mk)
-$(call inherit-product, frameworks/native/build/phone-xxhdpi-3072-hwui-memory.mk)
-
-$(call inherit-product, vendor/nvidia/shield/foster.mk)
-
-PRODUCT_SYSTEM_PROPERTY_BLACKLIST := ro.product.name
-
 # Overlay
 DEVICE_PACKAGE_OVERLAYS += \
     device/nvidia/foster/overlay
+
+$(call inherit-product, device/nvidia/shield-common/shield.mk)
+
+# Include drawables for various densities.
+PRODUCT_AAPT_CONFIG := normal large xlarge tvdpi hdpi xhdpi xxhdpi
+PRODUCT_AAPT_PREF_CONFIG := xhdpi
+TARGET_SCREEN_HEIGHT := 1920
+TARGET_SCREEN_WIDTH := 1080
+
+# Boot Animation
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/bootanimation.zip:system/media/bootanimation.zip
+
+## Install GMS if available
+$(call inherit-product-if-exists, 3rdparty/google/gms-apps/tv/gms.mk)
+PRODUCT_PROPERTY_OVERRIDES += \
+        ro.com.google.clientidbase=android-nvidia
+
+PRODUCT_PROPERTY_OVERRIDES += \
+        ro.nrdp.modelgroup=SHIELDANDROIDTV
+
+$(call inherit-product, frameworks/native/build/tablet-10in-xhdpi-2048-dalvik-heap.mk)
+
+$(call inherit-product, vendor/nvidia/shield/foster.mk)
 
 # Ramdisk
 PRODUCT_PACKAGES += \
@@ -67,6 +77,17 @@ PRODUCT_PACKAGES += \
     ueventd.jetson_cv.rc \
     ueventd.loki_e_wifi.rc
 
+LOCAL_FSTAB := $(LOCAL_PATH)/initfiles/fstab.darcy
+
+TARGET_RECOVERY_FSTAB = $(LOCAL_FSTAB)
+
+PRODUCT_PACKAGES += \
+    fs_config_files \
+    crash_dispatcher \
+    crash_collector \
+    CrashReportProvider \
+    fwtool
+
 # Permissions
 PRODUCT_COPY_FILES += \
     frameworks/native/data/etc/android.hardware.audio.low_latency.xml:system/etc/permissions/android.hardware.audio.low_latency.xml \
@@ -85,6 +106,9 @@ PRODUCT_COPY_FILES += \
     $(LOCAL_PATH)/permissions/com.nvidia.feature.opengl4.xml:system/etc/permissions/com.nvidia.feature.opengl4.xml \
     $(LOCAL_PATH)/permissions/com.nvidia.nvsi.xml:system/etc/permissions/com.nvidia.nvsi.xml
 
+# Define Netflix nrdp properties 
+PRODUCT_COPY_FILES += \
+    $(LOCAL_PATH)/permissions/nrdp.modelgroup.xml:system/etc/permissions/nrdp.modelgroup.xml
 
 # Media config
 PRODUCT_COPY_FILES += \
@@ -117,6 +141,25 @@ PRODUCT_COPY_FILES += \
 PRODUCT_PACKAGES += \
     lights.tegra
 
+# Leanback Customizer
+PRODUCT_PACKAGES += \
+    LeanbackCustomize
+
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.hardware.vulkan=tegra
+
+# recents prop
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.recents.grid=true
+
+# The default locale should be determined from VPD, not from build.prop.
+PRODUCT_SYSTEM_PROPERTY_BLACKLIST := \
+    ro.product.locale
+
+# OEM Unlock reporting
+ADDITIONAL_DEFAULT_PROPERTIES += \
+    ro.oem_unlock_supported=1
+
 # Charger
 PRODUCT_PACKAGES += \
     charger \
@@ -125,3 +168,20 @@ PRODUCT_PACKAGES += \
 # Variant blobs script
 PRODUCT_COPY_FILES += \
      $(LOCAL_PATH)/releasetools/variant_blobs.sh:install/bin/variant_blobs.sh
+
+$(call inherit-product, build/target/product/vboot.mk)
+$(call inherit-product, build/target/product/verity.mk)
+# including verity.mk automatically enabled boot signer which conflicts with
+# vboot
+PRODUCT_SUPPORTS_BOOT_SIGNER := false
+PRODUCT_SUPPORTS_VERITY_FEC := false
+PRODUCT_SYSTEM_VERITY_PARTITION := /dev/block/platform/700b0600.sdhci/by-name/APP
+PRODUCT_VENDOR_VERITY_PARTITION := /dev/block/platform/700b0600.sdhci/by-name/VNR
+
+# The following group is necessary to support building the NVIDIA vendor
+# HALs and prebuilts.
+BOARD_SUPPORT_NVOICE := true
+BOARD_SUPPORT_NVAUDIOFX :=true
+BOARD_USES_LIBDRM := true
+NV_GPU_USE_SYNC_FD := 1
+USE_DRM_HWCOMPOSER := 1
